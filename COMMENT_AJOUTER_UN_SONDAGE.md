@@ -114,6 +114,32 @@ Lors de la PR, GitHub Actions va :
 
 Une fois la PR mergée, les fichiers `presidentielle2027.csv` et `presidentielle2027.json` seront automatiquement mis à jour.
 
+## Extraction assistée (optionnelle)
+
+Un workflow peut préparer la PR à votre place à partir de l'issue ouverte par
+`check-new-polls`.
+
+1. Vérifiez que la notice contient bien des **intentions de vote** (la majorité
+   des notices `Pres` sont des baromètres de popularité).
+2. Ajoutez le label `extract-poll` à l'issue.
+3. Le workflow `poll-to-pr` lit le PDF, écrit les fichiers, lance les tests et
+   ouvre une **PR en brouillon**.
+
+La PR reste à relire ligne par ligne : elle contient une section « Points à
+vérifier » qui liste ce qui a demandé un jugement à la lecture du PDF.
+
+Prérequis côté dépôt :
+
+- le secret `ANTHROPIC_API_KEY` ;
+- le label `extract-poll`.
+
+Les consignes d'extraction sont versionnées dans
+[`.github/poll-extraction-prompt.md`](.github/poll-extraction-prompt.md) : c'est
+là qu'il faut corriger le tir si une extraction se trompe systématiquement.
+
+Le workflow est volontairement déclenché à la main, et non à l'ouverture de
+l'issue, pour ne pas lancer d'extraction sur les notices hors périmètre.
+
 ## Format de nommage des poll_id
 
 Le format recommandé est : `YYYYMMDD_DDMM_ii_X`

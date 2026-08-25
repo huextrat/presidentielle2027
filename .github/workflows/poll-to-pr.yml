@@ -1,0 +1,51 @@
+name: Draft a PR from a poll issue
+
+# Opt-in on purpose: a maintainer adds the `extract-poll` label once the notice
+# has been triaged as an actual voting-intention poll. Most `Pres` notices are
+# popularity barometers, and running the extraction on those burns API credit
+# for a PR that would be closed straight away.
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to extract
+        required: true
+
+jobs:
+  extract:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'extract-poll'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Read the extraction instructions
+        id: instructions
+        run: |
+          {
+            echo 'prompt<<PROMPT_EOF'
+            echo "Issue à traiter : #${ISSUE_NUMBER} du dépôt ${GITHUB_REPOSITORY}."
+            echo
+            cat .github/poll-extraction-prompt.md
+            echo 'PROMPT_EOF'
+          } >> "$GITHUB_OUTPUT"
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue }}
+
+      - name: Extract the poll and open a draft PR
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.instructions.outputs.prompt }}
+          claude_args: --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebFetch"
